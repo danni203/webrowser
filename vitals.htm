@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta content="Vitals Scanner Web Browser" name="title">
+  <title>Vitals Scanner Web Browser</title>
+  <style>
+      body {
+        margin: 30px;
+      }
+
+      h1 {
+        font-family: sans-serif;
+        color: #666;
+      }
+
+      #container {
+        width: 500px;
+        height: 375px;
+        border: 10px #333 solid;
+      }
+
+      #videoElement {
+        width: 500px;
+        height: 375px;
+        background-color: #666;
+      }
+
+      button {
+        margin-top: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 5px;
+        background-color: white;
+        border: 5px solid black;
+      }
+
+      button:hover {
+        background-color: yellow;
+      }
+
+      button:active {
+        background-color: yellowgreen;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Vitals Scanner Web Browser</h1>
+    <div id="container">
+      <video autoplay="true" id="videoElement"></video>
+    </div>
+    <br>
+    <button id="stop">Stop Video</button>
+    <br>
+    <a id="download">Download
+
+    <script>
+    let shouldStop = false;
+    let stopped = false;
+    const downloadLink = document.getElementById('download');
+    const stopButton = document.getElementById('stop');
+
+    stopButton.addEventListener('click', function() {
+      shouldStop = true;
+      console.log("pressed stop button");
+      handleSuccess(videoElement.srcObject);
+    })
+
+    var handleSuccess = function(stream) {
+      const options = {mimeType: 'video/webm'};
+      const recordedChunks = [];
+      const mediaRecorder = new MediaRecorder(stream, options);
+
+      mediaRecorder.addEventListener('dataavailable', function(e) {
+        console.log("output mediaRecorder data");
+        if (e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      });
+
+      mediaRecorder.addEventListener('stop', function() {
+        console.log("output video stream to URL");
+        downloadLink.href = URL.createObjectURL(new Blob(recordedChunks));
+        downloadLink.download = 'vitals_scan.webm';
+      });
+
+
+      if (shouldStop === true && stopped === false) {
+        console.log("stop button pressed, ending video stream");
+        var tracks = stream.getTracks();
+
+        for (var i = 0; i < tracks.length; i++) {
+          var track = tracks[i];
+          track.stop();
+        }
+        videoElement.srcObject = null;
+        stopped = true;
+        console.log("video stream ended");
+      }
+      else {
+        console.log("capturing video stream");
+        mediaRecorder.start();
+        videoElement.srcObject = stream;
+      }
+    };
+
+    navigator.mediaDevices.getUserMedia({ audio: false, video: true })
+      .then(handleSuccess);
+
+    </script>
+  </body>
+</html>
